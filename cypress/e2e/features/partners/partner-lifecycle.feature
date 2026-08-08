@@ -3,8 +3,9 @@ Feature: Partner management
 
     Background:
         Given I am logged in to the administration platform
-        And I open the Partners section
-        Then I should land on the Partners page
+        Then I should be on the "Requests" page
+        When I open the "Partners" section
+        Then I should be on the "Partners" page
 
     Scenario: Create a Service Partner
         When I create a new Service Partner using valid required data

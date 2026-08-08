@@ -1,6 +1,6 @@
 import { Given, When, Then } from "@badeball/cypress-cucumber-preprocessor";
 import PartnersPage from "../../../models/pages/PartnersPage.js";
-import { navigateToPartners } from "../../../helpers/navigationHelper.js";
+import { navigateTo, verifyPage } from "../../../helpers/navigationHelper.js";
 import { buildPartnerData, generateUniqueSuffix, generatePhoneNumber } from "../../../helpers/testDataHelper.js";
 
 const partnersPage = new PartnersPage();
@@ -12,12 +12,12 @@ Given("I am logged in to the administration platform", () => {
   cy.visit("/");
 });
 
-Given("I open the Partners section", () => {
-  navigateToPartners();
+When("I open the {string} section", (pageName) => {
+  navigateTo(pageName);
 });
 
-Then("I should land on the Partners page", () => {
-  partnersPage.verifyLoaded();
+Then("I should be on the {string} page", (pageName) => {
+  verifyPage(pageName);
 });
 
 When("I create a new Service Partner using valid required data", () => {
@@ -61,7 +61,7 @@ When("I update the created Partner", () => {
 
 Then("the Partner changes should be persisted", () => {
   // Revisit the list so the assertion proves persistence, not only local form state.
-  navigateToPartners();
+  navigateTo("Partners");
 
   // Proves the real persisted Name/Phone actually changed (old value gone, new value
   // present) before verifying the complete post-update record below.

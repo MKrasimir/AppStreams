@@ -42,12 +42,6 @@ export default class PartnersPage {
     });
   }
 
-  verifyLoaded() {
-    // The page heading shares its bilingual text with the (hidden, collapsed-sidebar)
-    // nav item, so scope by visibility rather than a CSS-module hash class or locale.
-    cy.contains(":visible", /Partners|Партньори/i).should("be.visible");
-  }
-
   verifyPartnerExists(name) {
     cy.contains(name).should("be.visible");
   }
