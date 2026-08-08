@@ -23,7 +23,10 @@ Then("I should land on the Partners page", () => {
 When("I create a new Service Partner using valid required data", () => {
   cy.fixture("partners/partner-data").then(({ servicePartner }) => {
     partner = buildPartnerData(servicePartner);
+
+    partnersPage.registerCreatePartnerRequest();
     partnersPage.createPartner(partner);
+    partnersPage.waitForCreatePartnerRequest(partner);
   });
 });
 
@@ -50,7 +53,10 @@ When("I update the created Partner", () => {
   // The row currently on screen still has the ORIGINAL name until Save - locate it
   // by originalPartner.name, never by the not-yet-saved partner.name.
   partnersPage.openEditPartner(originalPartner.name);
+
+  partnersPage.registerUpdatePartnerRequest();
   partnersPage.updatePartnerNameAndPhone(partner.name, partner.phone);
+  partnersPage.waitForUpdatePartnerRequest(partner);
 });
 
 Then("the Partner changes should be persisted", () => {

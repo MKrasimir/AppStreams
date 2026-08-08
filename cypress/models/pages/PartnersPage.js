@@ -24,6 +24,24 @@ export default class PartnersPage {
     this.form.submit();
   }
 
+  registerCreatePartnerRequest() {
+    cy.intercept("POST", "**/admin/partner").as("createPartner");
+  }
+
+  waitForCreatePartnerRequest(partner) {
+    cy.wait("@createPartner").should((interception) => {
+      expect(interception.response, "create Partner request returned a response").to.exist;
+      expect(interception.response.statusCode, "create Partner request returned success").to.equal(200);
+      expect(interception.request.body.name, "create Partner request contains the created name").to.equal(
+        partner.name
+      );
+      expect(
+        normalizePhone(interception.request.body.phone),
+        "create Partner request contains the created phone"
+      ).to.equal(normalizePhone(partner.phone));
+    });
+  }
+
   verifyLoaded() {
     // The page heading shares its bilingual text with the (hidden, collapsed-sidebar)
     // nav item, so scope by visibility rather than a CSS-module hash class or locale.
@@ -69,6 +87,24 @@ export default class PartnersPage {
     this.form.fields.name.type(name);
     this.form.fields.phone.type(phone);
     this.form.submit();
+  }
+
+  registerUpdatePartnerRequest() {
+    cy.intercept("PUT", "**/admin/partner/*").as("updatePartner");
+  }
+
+  waitForUpdatePartnerRequest(partner) {
+    cy.wait("@updatePartner").should((interception) => {
+      expect(interception.response, "update Partner request returned a response").to.exist;
+      expect(interception.response.statusCode, "update Partner request returned success").to.equal(200);
+      expect(interception.request.body.name, "update Partner request contains updated name").to.equal(
+        partner.name
+      );
+      expect(
+        normalizePhone(interception.request.body.phone),
+        "update Partner request contains updated phone"
+      ).to.equal(normalizePhone(partner.phone));
+    });
   }
 
   verifyPartnerDetails(partner) {
