@@ -1,0 +1,30 @@
+{
+  "name": "appstreams-qa-automation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cypress + Cucumber E2E automation assignment for the Partner lifecycle",
+  "scripts": {
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "test": "cypress run",
+    "test:partners": "cypress run --spec \"cypress/e2e/features/partners/**/*.feature\"",
+    "gherkin:lint": "gherkin-lint \"cypress/e2e/features/**/*.feature\""
+  },
+  "devDependencies": {
+    "@badeball/cypress-cucumber-preprocessor": "26.0.0",
+    "@bahmutov/cypress-esbuild-preprocessor": "2.2.8",
+    "cypress": "15.19.0",
+    "esbuild": "^0.25.0",
+    "gherkin-lint": "^4.2.4"
+  },
+  "cypress-cucumber-preprocessor": {
+    "stepDefinitions": [
+      "cypress/e2e/step_definitions/**/*.{js,ts}",
+      "[filepath]/**/*.{js,ts}",
+      "[filepath].{js,ts}"
+    ],
+    "filterSpecs": true,
+    "omitFiltered": true
+  }
+}

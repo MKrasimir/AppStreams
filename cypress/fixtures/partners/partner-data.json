@@ -1,0 +1,18 @@
+{
+  "servicePartner": {
+    "namePrefix": "QA Automation Partner",
+    "address": "Sofia, Bulgaria",
+    "type": "Service",
+        "services": [
+      "Наем на автомобил",
+      "Painting",
+      "ОЕМ Oil change"
+    ],
+    "plan": "Free Trial 14 days",
+    "phone": "+359 888 888 888",
+    "contactPerson": "Krasimir Marinov",
+    "description": "This is a test partner created by QA automation.",
+    "logo": "cypress/fixtures/files/partners/logo.png",
+    "updatedNameSuffix": "Updated"
+  }
+}
