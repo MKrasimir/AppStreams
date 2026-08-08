@@ -131,3 +131,5 @@ The Address is populated as required by the assignment but is not asserted becau
 ## Design principle
 
 The goal is not to reproduce a large enterprise framework for one workflow. The goal is to show a structure that is easy to understand today and can grow by adding feature files, step-definition domains, page/form models, fixtures and helpers without rewriting the foundation.
+=======
+# AppStreams
