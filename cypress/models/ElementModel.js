@@ -15,10 +15,6 @@ export default class ElementModel {
     return this.get().should("be.visible").clear().type(value, options);
   }
 
-  shouldHaveValue(value) {
-    return this.get().should("have.value", value);
-  }
-
   uploadFile(filePath) {
     // No <input type="file"> exists anywhere in this app's DOM for this widget
     // (confirmed via live DevTools search) - it creates one dynamically in JS without

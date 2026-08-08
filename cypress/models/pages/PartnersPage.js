@@ -7,10 +7,26 @@ import PartnerForm from "../forms/PartnerForm.js";
 const normalizeText = (value) => (value || "").trim().replace(/\s+/g, " ").toLowerCase();
 const normalizePhone = (value) => (value || "").replace(/\s+/g, "");
 
+// Row-scoped/dynamic table selectors - centralized here rather than ElementModel,
+// since they only mean anything scoped to an already-located, per-Partner row. This
+// is the single owner for these literals instead of each method retyping its own copy.
+const selectors = {
+  row: "tr.ant-table-row",
+  columns: {
+    name: ".testid-requestNumberColumn",
+    address: ".testid-carColumn",
+    phone: ".testid-usersColumn",
+    contactPerson: ".testid-pickUpDateColumn",
+    services: ".testid-serviceTypeColumn",
+    plan: ".testid-carServiceColumn",
+  },
+  actionButton: "#action-button",
+  editButton: "#edit-button",
+};
+
 export default class PartnersPage {
   constructor() {
-    // Replace placeholder data-testid selector after DOM inspection.
-    this.addButton = new ElementModel('.ant-btn');
+    this.addButton = new ElementModel('[id="new-New partner-button"]');
     this.form = new PartnerForm();
   }
 
@@ -42,23 +58,19 @@ export default class PartnersPage {
     });
   }
 
-  verifyPartnerExists(name) {
-    cy.contains(name).should("be.visible");
-  }
-
   // Filters real rows by their Name-column text and asserts exactly one match -
   // never .first()/.eq()/nth-child(), since the table holds many existing Partners.
   getPartnerRow(name) {
     return cy
-      .get("tr.ant-table-row")
-      .filter((_, el) => Cypress.$(el).find(".testid-requestNumberColumn").text().includes(name))
+      .get(selectors.row)
+      .filter((_, el) => Cypress.$(el).find(selectors.columns.name).text().includes(name))
       .should("have.length", 1);
   }
 
   // Row-scoped: the confirmed real DOM shows every row reuses the same
   // id="action-button", so this must never be queried outside a located row.
   getActionButton(name) {
-    return this.getPartnerRow(name).find("#action-button");
+    return this.getPartnerRow(name).find(selectors.actionButton);
   }
 
   openActionsMenu(name) {
@@ -68,7 +80,7 @@ export default class PartnersPage {
   openEditPartner(name) {
     this.openActionsMenu(name);
 
-    cy.get("#edit-button").should("have.length", 1).and("be.visible").click();
+    cy.get(selectors.editButton).should("have.length", 1).and("be.visible").click();
 
     // No separate Edit-form model exists in this app - PartnerForm's own fields are
     // reused here as the open-signal, rather than guessing a new modal selector.
@@ -103,16 +115,16 @@ export default class PartnersPage {
 
   verifyPartnerDetails(partner) {
     this.getPartnerRow(partner.name).within(() => {
-      cy.get(".testid-requestNumberColumn").should(($cell) => {
+      cy.get(selectors.columns.name).should(($cell) => {
         expect(normalizeText($cell.text())).to.include(normalizeText(partner.name));
       });
-      cy.get(".testid-carColumn").should(($cell) => {
+      cy.get(selectors.columns.address).should(($cell) => {
         expect(normalizeText($cell.text())).to.include(normalizeText(partner.address));
       });
-      cy.get(".testid-usersColumn").should(($cell) => {
+      cy.get(selectors.columns.phone).should(($cell) => {
         expect(normalizePhone($cell.text())).to.include(normalizePhone(partner.phone));
       });
-      cy.get(".testid-pickUpDateColumn").should(($cell) => {
+      cy.get(selectors.columns.contactPerson).should(($cell) => {
         expect(normalizeText($cell.text())).to.include(normalizeText(partner.contactPerson));
       });
 
@@ -120,7 +132,7 @@ export default class PartnersPage {
       // concatenated text - the real markup has no separator between adjacent
       // service tags. Uses the bare `span` element, never the generated
       // .CxZJ6/.SB1Op classes seen in the real DOM.
-      cy.get(".testid-serviceTypeColumn")
+      cy.get(selectors.columns.services)
         .find("span")
         .then(($tags) => {
           const actualServices = $tags.map((_, el) => normalizeText(Cypress.$(el).text())).get();
@@ -129,13 +141,13 @@ export default class PartnersPage {
           });
         });
 
-      cy.get(".testid-carServiceColumn").should(($cell) => {
+      cy.get(selectors.columns.plan).should(($cell) => {
         expect(normalizeText($cell.text())).to.include(normalizeText(partner.plan));
       });
 
       // Row-scoped lookup only - proves the action button resolves to exactly one
       // element inside this row (its id is duplicated across every row). Not clicked.
-      cy.get("#action-button").should("have.length", 1).and("be.visible");
+      cy.get(selectors.actionButton).should("have.length", 1).and("be.visible");
     });
   }
 
@@ -145,7 +157,7 @@ export default class PartnersPage {
   // post-update record separately; this never replaces it.
   verifyPartnerChanges(originalPartner, updatedPartner) {
     this.getPartnerRow(updatedPartner.name).within(() => {
-      cy.get(".testid-requestNumberColumn").should(($cell) => {
+      cy.get(selectors.columns.name).should(($cell) => {
         const persistedName = normalizeText($cell.text());
         expect(persistedName, "persisted name differs from pre-update name").to.not.equal(
           normalizeText(originalPartner.name)
@@ -155,7 +167,7 @@ export default class PartnersPage {
         );
       });
 
-      cy.get(".testid-usersColumn").should(($cell) => {
+      cy.get(selectors.columns.phone).should(($cell) => {
         const persistedPhone = normalizePhone($cell.text());
         expect(persistedPhone, "persisted phone differs from pre-update phone").to.not.equal(
           normalizePhone(originalPartner.phone)
