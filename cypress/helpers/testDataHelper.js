@@ -42,8 +42,7 @@ export function buildPartnerData(template) {
     ...template,
     name,
     contactPerson: `${template.contactPerson} ${uniqueSuffix}`,
-    description: `${template.description} ${uniqueSuffix}`,
-    updatedName: `${name} ${template.updatedNameSuffix}`
+    description: `${template.description} ${uniqueSuffix}`
   };
 
   validatePartnerData(partner);

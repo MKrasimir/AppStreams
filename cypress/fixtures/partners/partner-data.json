@@ -12,7 +12,6 @@
     "phone": "+359 888 888 888",
     "contactPerson": "Krasimir Marinov",
     "description": "This is a test partner created by QA automation.",
-    "logo": "cypress/fixtures/files/partners/logo.png",
-    "updatedNameSuffix": "Updated"
+    "logo": "cypress/fixtures/files/partners/logo.png"
   }
 }
