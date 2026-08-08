@@ -53,6 +53,11 @@ export default class PartnerForm extends BaseForm {
     selectAddressSuggestion(this.fields.address.selector, address);
   }
 
+  updateFields({ name, phone }) {
+    this.fields.name.type(name);
+    this.fields.phone.type(phone);
+  }
+
   confirmPhotoUpload() {
     // selectFile() only attaches the raw file - the app then opens a separate "Edit
     // photo" crop/confirm modal, and the image isn't applied until its own Save is

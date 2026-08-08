@@ -7,6 +7,21 @@ import PartnerForm from "../forms/PartnerForm.js";
 const normalizeText = (value) => (value || "").trim().replace(/\s+/g, " ").toLowerCase();
 const normalizePhone = (value) => (value || "").replace(/\s+/g, "");
 
+// Shared by waitForCreatePartnerRequest and waitForUpdatePartnerRequest - both request
+// bodies are asserted identically (response exists, succeeded, contains the expected
+// name/phone), differing only in the action/wording reported on failure.
+function assertPartnerRequestBody(interception, partner, action, valueDescriptor) {
+  expect(interception.response, `${action} Partner request returned a response`).to.exist;
+  expect(interception.response.statusCode, `${action} Partner request returned success`).to.equal(200);
+  expect(interception.request.body.name, `${action} Partner request contains ${valueDescriptor} name`).to.equal(
+    partner.name
+  );
+  expect(
+    normalizePhone(interception.request.body.phone),
+    `${action} Partner request contains ${valueDescriptor} phone`
+  ).to.equal(normalizePhone(partner.phone));
+}
+
 // Row-scoped/dynamic table selectors - centralized here rather than ElementModel,
 // since they only mean anything scoped to an already-located, per-Partner row. This
 // is the single owner for these literals instead of each method retyping its own copy.
@@ -46,15 +61,7 @@ export default class PartnersPage {
 
   waitForCreatePartnerRequest(partner) {
     cy.wait("@createPartner").should((interception) => {
-      expect(interception.response, "create Partner request returned a response").to.exist;
-      expect(interception.response.statusCode, "create Partner request returned success").to.equal(200);
-      expect(interception.request.body.name, "create Partner request contains the created name").to.equal(
-        partner.name
-      );
-      expect(
-        normalizePhone(interception.request.body.phone),
-        "create Partner request contains the created phone"
-      ).to.equal(normalizePhone(partner.phone));
+      assertPartnerRequestBody(interception, partner, "create", "the created");
     });
   }
 
@@ -90,8 +97,7 @@ export default class PartnersPage {
   // Replaces the entire value of both fields (ElementModel.type() clears first) and
   // saves through the same generic PartnerForm submit() Create already uses.
   updatePartnerNameAndPhone(name, phone) {
-    this.form.fields.name.type(name);
-    this.form.fields.phone.type(phone);
+    this.form.updateFields({ name, phone });
     this.form.submit();
   }
 
@@ -101,15 +107,7 @@ export default class PartnersPage {
 
   waitForUpdatePartnerRequest(partner) {
     cy.wait("@updatePartner").should((interception) => {
-      expect(interception.response, "update Partner request returned a response").to.exist;
-      expect(interception.response.statusCode, "update Partner request returned success").to.equal(200);
-      expect(interception.request.body.name, "update Partner request contains updated name").to.equal(
-        partner.name
-      );
-      expect(
-        normalizePhone(interception.request.body.phone),
-        "update Partner request contains updated phone"
-      ).to.equal(normalizePhone(partner.phone));
+      assertPartnerRequestBody(interception, partner, "update", "updated");
     });
   }
 
