@@ -62,19 +62,27 @@ CYPRESS_TEST_PASSWORD=...
 
 ## Run
 
-Interactive:
+All scripts explicitly run **Google Chrome** - never Cypress's Electron fallback. Chrome is representative of a real, widely-used browser, and headless Chrome is the mode CI/CD uses.
+
+OPEN - interactive Cypress app, headed Chrome. For local development, inspecting the command log, and debugging selectors/network requests:
 
 ```bash
 npm run cy:open
 ```
 
-Headless:
+HEADED - `cypress run` to completion, with the real Chrome window visible. Useful for reproducing a headless failure locally:
 
 ```bash
-npm test
+npm run cy:headed
 ```
 
-Partner feature only:
+HEADLESS - normal automated run, no browser UI. The canonical automated mode (`npm test` is an equivalent alias):
+
+```bash
+npm run cy:headless
+```
+
+Partner feature only, headless Chrome - suitable for CI/CD as-is:
 
 ```bash
 npm run test:partners
@@ -85,6 +93,26 @@ Gherkin lint:
 ```bash
 npm run gherkin:lint
 ```
+
+CI/CD should use a headless Chrome script (`npm run cy:headless` or the Partner-specific `npm run test:partners`); Chrome must be available on the CI runner. No headed/open mode should ever be required by CI. (The GitHub Actions workflow itself is unchanged in this pass; environment selection can be layered on later with `--env targetEnv=...`.)
+
+## Environments
+
+`baseUrl` is resolved from `targetEnv` in `cypress.config.js`. **DEV is the default when `targetEnv` is omitted** - a deliberate safety choice, so forgetting the flag never redirects the suite toward STG/PROD.
+
+Environment selection and execution mode are independent and compose freely - append `-- --env targetEnv=...` to any script:
+
+```bash
+npm run test:partners                          # DEV + Chrome + headless (default)
+npm run test:partners -- --env targetEnv=dev    # same, explicit
+npm run cy:open -- --env targetEnv=dev
+npm run cy:headed -- --env targetEnv=dev
+npm run cy:headless -- --env targetEnv=dev
+```
+
+`stg` and `prod` exist in the environment map as future-ready entries, but their real URLs weren't provided with this assignment, so no `baseUrl` is configured for them yet. Selecting either (`--env targetEnv=stg` / `--env targetEnv=prod`) fails immediately with a clear "not configured" error, and any unrecognized `targetEnv` value fails immediately with a clear "unknown environment" error - neither case silently falls back to DEV, regardless of execution mode.
+
+Credentials remain managed separately (see Credentials above) and are never part of the environment URL map.
 
 ## Important before the first real run
 

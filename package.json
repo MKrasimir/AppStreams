@@ -5,10 +5,11 @@
   "type": "module",
   "description": "Cypress + Cucumber E2E automation assignment for the Partner lifecycle",
   "scripts": {
-    "cy:open": "cypress open",
-    "cy:run": "cypress run",
-    "test": "cypress run",
-    "test:partners": "cypress run --spec \"cypress/e2e/features/partners/**/*.feature\"",
+    "cy:open": "cypress open --e2e --browser chrome",
+    "cy:headed": "cypress run --browser chrome --headed",
+    "cy:headless": "cypress run --browser chrome",
+    "test": "cypress run --browser chrome",
+    "test:partners": "cypress run --browser chrome --spec \"cypress/e2e/features/partners/**/*.feature\"",
     "gherkin:lint": "gherkin-lint \"cypress/e2e/features/**/*.feature\""
   },
   "devDependencies": {
