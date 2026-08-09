@@ -104,9 +104,9 @@ CI/CD should use a headless Chrome script (`npm run cy:headless` or the Partner-
 
 The report is generated whether the run passes or fails, and never changes Cypress's own outcome - a failing run still exits non-zero.
 
-Screenshots (`cypress/screenshots/`) and video (`cypress/videos/`) are unchanged and continue to be produced independently of the report.
+Screenshots (both Cypress's own retry/failure captures and a per-Scenario evidence screenshot showing the Command Log alongside the app) save inside the report tree at `cypress/reports/mochawesome/assets/`, so `report.html` can reference them by a portable relative path - no machine-specific paths, no separate encoding step. Video (`cypress/videos/`) is unchanged and continues to be produced independently of the report.
 
-CI (`.github/workflows/e2e.yml`) uploads the Mochawesome report, screenshots, and video as a single `cypress-artifacts` build artifact after every run (pass or fail), with a 7-day retention period.
+CI (`.github/workflows/e2e.yml`) uploads the Mochawesome report (including its screenshot assets) and video as a single `cypress-artifacts` build artifact after every run (pass or fail), with a 7-day retention period.
 
 ## Environments
 

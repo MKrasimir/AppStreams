@@ -27,7 +27,6 @@ jobs:
           name: cypress-artifacts
           path: |
             cypress/reports/mochawesome
-            cypress/screenshots
             cypress/videos
           retention-days: 7
           if-no-files-found: ignore

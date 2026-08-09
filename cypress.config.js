@@ -1,5 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { defineConfig } from "cypress";
 import createBundler from "@bahmutov/cypress-esbuild-preprocessor";
 import { addCucumberPreprocessorPlugin } from "@badeball/cypress-cucumber-preprocessor";
@@ -40,21 +38,6 @@ export default defineConfig({
         })
       );
 
-      // Browser-side test code has no filesystem access, so embedding a screenshot
-      // into the Mochawesome report (for portability - see reportEvidenceHelper.js)
-      // requires a Node-side task to read and base64-encode the file. Returns null
-      // rather than throwing if the file isn't there, so a report-evidence problem
-      // never fails the actual business test.
-      on("task", {
-        encodeScreenshotAsBase64(fileName) {
-          const filePath = path.join(config.screenshotsFolder, fileName);
-          if (!existsSync(filePath)) {
-            return null;
-          }
-          return `data:image/png;base64,${readFileSync(filePath).toString("base64")}`;
-        },
-      });
-
       // DEV is the deliberate default when targetEnv is omitted - forgetting the
       // flag must never redirect the suite toward STG/PROD.
       const targetEnv = config.env.targetEnv || "dev";
@@ -76,6 +59,11 @@ export default defineConfig({
     },
   },
 
+  // Screenshots (both Cypress's own retry/failure captures and the custom Scenario
+  // evidence ones - see reportEvidenceHelper.js) save directly inside the report tree,
+  // so report.html can reference them by a portable relative path (no base64/task
+  // needed) and the wrapper's single report-directory cleanup covers them too.
+  screenshotsFolder: "cypress/reports/mochawesome/assets",
   screenshotOnRunFailure: true,
   video: true,
   defaultCommandTimeout: 10000,

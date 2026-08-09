@@ -1,21 +1,16 @@
-import addContext from "mochawesome/addContext";
-
-// The exact Mocha Test object for the Scenario currently running, captured directly
-// from Cypress's own native test:before:run event - NOT relied upon via `this` inside
-// a cy.then() callback. Evidence is captured from a Cucumber `After` hook (see
-// reporting.hooks.js), which runs Before/Steps/After all inside cucumber-preprocessor's
-// own internal function calls within ONE Mocha it() per Scenario; nothing guarantees
-// Cypress's `this`-rebinding for `.then()` correctly threads through that call stack,
-// and there is no way to prove it does without live instrumentation. test:before:run
-// fires once per Scenario (cucumber-preprocessor maps each Scenario to exactly one
-// Mocha it()), with the real Test object handed to us directly - eliminating the
-// binding question entirely, per Cypress's own supported mechanism for this exact
-// "get the current test from an arbitrary point in the run" need.
-let currentTest = null;
-
-Cypress.on("test:before:run", (_attributes, test) => {
-  currentTest = test;
-});
+// Sidecar JSONL (newline-delimited JSON): one evidence record per captureScenarioEvidence()
+// call, appended here on the browser side and later read + patched into the raw per-spec
+// Mochawesome JSON by scripts/run-headless-with-report.js, BEFORE mochawesome-merge runs.
+//
+// Why a sidecar instead of mochawesome/addContext + Cypress.on("test:after:run", ...) (the
+// old approach): in headless `cypress run`, Cypress's browser-to-Node event bridge for the
+// Mocha-reporter forwarding only ever sends a snapshot of the test built from a fixed
+// property whitelist that does not include `context`, taken before any test:after:run
+// listener even runs. Mutating the live browser-side Test object can therefore never reach
+// the Node-side Test object Mochawesome actually serializes from - regardless of which
+// event/parameter is used. Lives inside the report tree so the existing report-directory
+// wipe in run-headless-with-report.js cleans it up automatically between runs.
+const sidecarPath = "cypress/reports/mochawesome/evidence.jsonl";
 
 // Filename-safe, cross-platform, deterministic: strips everything but
 // alphanumerics, collapses repeats, trims edges - works for any Feature/Scenario
@@ -37,43 +32,78 @@ function timestamp() {
 
 // Only active for reporting-enabled headless runs - scripts/run-headless-with-report.js
 // is the only thing that sets CYPRESS_reportEvidence, so cy:open/cy:headed never take
-// this extra screenshot or touch the Mochawesome context API.
+// this extra screenshot or touch the sidecar file.
 //
-// Feature/Scenario identity is read from Cypress.spec/Cypress.currentTest at runtime -
+// Feature/Scenario identity is read from Cypress.spec / the current test at runtime -
 // never hardcoded - so this works unchanged for any future feature file or Scenario.
 //
-// Called once, from the global After hook (reporting.hooks.js), so it naturally covers
-// both a passing Scenario's final business state and a failing Scenario's failure state
-// with the same mechanism, without duplicating capture logic per outcome.
-export function captureScenarioEvidence() {
-  if (!Cypress.env("reportEvidence") || Cypress.currentTest.state === "pending") {
+// Called from a real Mocha afterEach (cypress/support/e2e.js), which always runs
+// regardless of pass/fail - so this naturally covers both a passing Scenario's final
+// business state and a failing Scenario's failure state with the same mechanism,
+// without duplicating capture logic per outcome.
+//
+// Takes the real Mocha `currentTest` (afterEach's `this.currentTest`), not
+// `Cypress.currentTest`: Cypress's `currentTest` getter only ever projects
+// `{ title, titlePath }` onto a fresh object - `.state`/`.err` are never present on it,
+// on any test, pass or fail - so outcome must be read off the live Mocha Test object
+// instead. Note `currentTest.titlePath` is a method here (`.titlePath()`), unlike the
+// pre-computed array Cypress.currentTest.titlePath was - fullTitle() is used instead,
+// Mocha's own equivalent, to avoid that mismatch entirely.
+export function captureScenarioEvidence(currentTest) {
+  if (!Cypress.env("reportEvidence") || currentTest.state === "pending") {
     return;
   }
 
   const featureSlug = toFileSafeSlug(Cypress.spec.name.replace(/\.[^.]+$/, ""));
-  const scenarioSlug = toFileSafeSlug(Cypress.currentTest.title);
+  const scenarioSlug = toFileSafeSlug(currentTest.title);
   const fileName = `${featureSlug}__${scenarioSlug}__${timestamp()}`;
-  const outcome = Cypress.currentTest.state === "failed" ? "failed" : "passed";
-  const testForContext = currentTest;
+  const outcome = currentTest.state === "failed" ? "failed" : "passed";
+
+  let actualScreenshotPath;
 
   // capture: "runner" includes the Command Log/Scenario result alongside the AUT -
   // requires the wrapper's --runner-ui flag (scripts/run-headless-with-report.js) so
   // the runner is actually rendered during `cypress run`; without it there is nothing
   // for "runner" capture to include. Scoped to this one call, not a global default, so
   // Cypress's own screenshotOnRunFailure capture mode is untouched.
-  cy.screenshot(fileName, { capture: "runner" });
+  //
+  // onAfterScreenshot's props.path is the REAL, final path Cypress's backend actually
+  // wrote the file to - including any " (attempt N)" suffix Cypress silently appends
+  // for a retried test's screenshot. `fileName` is only the starting point handed to
+  // Cypress; predicting the final saved name ourselves breaks on retry, since Cypress's
+  // own suffixing isn't reflected in that prediction.
+  cy.screenshot(fileName, {
+    capture: "runner",
+    onAfterScreenshot: (_$el, props) => {
+      actualScreenshotPath = props.path;
+    },
+  });
 
-  // Embedded as a base64 data URI (not a relative file path) so the report stays
-  // fully self-contained/portable - matches marge's own --inline flag, which already
-  // embeds the report's CSS/JS the same way.
+  // Queued after cy.screenshot(), so this runs only once the screenshot command - and
+  // therefore onAfterScreenshot - has fully completed and actualScreenshotPath is set.
   cy.then(() => {
-    cy.task("encodeScreenshotAsBase64", `${fileName}.png`).then((dataUri) => {
-      if (dataUri && testForContext) {
-        addContext(
-          { test: testForContext },
-          { title: `Scenario evidence (${outcome})`, value: dataUri }
-        );
-      }
-    });
+    // Only the filename can have gained a retry suffix - the spec-name subfolder
+    // (screenshotsFolder, cypress.config.js) never changes, so that segment stays the
+    // already-proven convention below, unaltered; only the filename segment now comes
+    // from the real saved path instead of being predicted.
+    const actualFileName = actualScreenshotPath.split(/[\\/]/).pop();
+    const relativePath = `assets/${encodeURIComponent(Cypress.spec.name)}/${encodeURIComponent(actualFileName)}`;
+
+    // Shape matches exactly what mochawesome/addContext.js would have set on test.context
+    // ({ title, value }) - the raw-JSON patch step in run-headless-with-report.js
+    // JSON.stringifies this object onto the matching test, matching mochawesome's own
+    // reporter convention.
+    const evidenceRecord = {
+      spec: Cypress.spec.relative,
+      fullTitle: currentTest.fullTitle(),
+      context: { title: `Scenario evidence (${outcome})`, value: relativePath },
+    };
+
+    // Append, never truncate - each `cypress run` invocation can capture many scenarios.
+    // retries.runMode: 1 (cypress.config.js) reruns afterEach around EACH retry attempt,
+    // so one scenario may append more than one line here; the Node-side patch step
+    // resolves that as "last line for this spec+fullTitle wins", matching the final
+    // attempt - the only one Mochawesome's raw JSON represents.
+    cy.writeFile(sidecarPath, `${JSON.stringify(evidenceRecord)}\n`, { flag: "a" });
   });
 }
