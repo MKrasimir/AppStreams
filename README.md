@@ -154,6 +154,14 @@ npm run cy:open -- --env targetEnv=dev
 
 `.github/workflows/e2e.yml` runs on `pull_request`, `push` to `main`, and manual `workflow_dispatch`, on a GitHub-hosted `ubuntu-latest` runner with Node 22 (via `actions/setup-node`, with npm dependency caching). It installs with `npm ci` and then runs **`npm test`** - the exact same command used locally - with credentials supplied through `CYPRESS_TEST_EMAIL`/`CYPRESS_TEST_PASSWORD` GitHub Secrets, never hardcoded. The job declares only `permissions: contents: read`, since checking out code, installing dependencies, running tests, and uploading artifacts need no write access.
 
+For CI execution, configure the following repository secrets under
+**Settings → Secrets and variables → Actions → Repository secrets**:
+
+- `CYPRESS_TEST_EMAIL`
+- `CYPRESS_TEST_PASSWORD`
+
+The secret values are injected only at workflow runtime and are never stored in the repository.
+
 The Mochawesome report (`cypress/reports/mochawesome/`, including its screenshot assets) and `cypress/videos/` are uploaded as a single `cypress-artifacts` build artifact with `if: always()`, so both passing and failing runs leave debuggable evidence, with a 7-day retention period. A failing suite still fails the workflow - report generation runs unconditionally after Cypress, but nothing ever overwrites Cypress's own pass/fail exit code, and no step swallows a failure to force a green run.
 
 The workflow itself contains no Cypress-specific orchestration - no reporter flags, merge commands, or screenshot logic in the YAML - it only calls the project's own `npm test`. That keeps the test framework portable: the same `npm ci && npm test` contract would work unchanged under Jenkins, GitLab CI, or inside a Docker image later, without touching the workflow's underlying logic.
