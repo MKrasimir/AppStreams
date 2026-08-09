@@ -132,7 +132,7 @@ export default class PartnersPage {
       // .CxZJ6/.SB1Op classes seen in the real DOM.
       cy.get(selectors.columns.services)
         .find("span")
-        .then(($tags) => {
+        .should(($tags) => {
           const actualServices = $tags.map((_, el) => normalizeText(Cypress.$(el).text())).get();
           partner.services.forEach((service) => {
             expect(actualServices, `service "${service}" persisted in row`).to.include(normalizeText(service));
