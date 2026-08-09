@@ -96,6 +96,18 @@ npm run gherkin:lint
 
 CI/CD should use a headless Chrome script (`npm run cy:headless` or the Partner-specific `npm run test:partners`); Chrome must be available on the CI runner. No headed/open mode should ever be required by CI. (The GitHub Actions workflow itself is unchanged in this pass; environment selection can be layered on later with `--env targetEnv=...`.)
 
+## Reporting
+
+`npm run cy:headless`, `npm test`, and `npm run test:partners` generate a Mochawesome HTML report at `cypress/reports/mochawesome/report.html` after the run finishes. Each of these commands deletes the previous report output before running, so the report never accumulates across runs - the latest run always fully replaces the last one.
+
+`npm run cy:open` and `npm run cy:headed` do **not** generate a report; they keep Cypress's normal interactive/console output.
+
+The report is generated whether the run passes or fails, and never changes Cypress's own outcome - a failing run still exits non-zero.
+
+Screenshots (`cypress/screenshots/`) and video (`cypress/videos/`) are unchanged and continue to be produced independently of the report.
+
+CI (`.github/workflows/e2e.yml`) uploads the Mochawesome report, screenshots, and video as a single `cypress-artifacts` build artifact after every run (pass or fail), with a 7-day retention period.
+
 ## Environments
 
 `baseUrl` is resolved from `targetEnv` in `cypress.config.js`. **DEV is the default when `targetEnv` is omitted** - a deliberate safety choice, so forgetting the flag never redirects the suite toward STG/PROD.

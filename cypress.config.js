@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { defineConfig } from "cypress";
 import createBundler from "@bahmutov/cypress-esbuild-preprocessor";
 import { addCucumberPreprocessorPlugin } from "@badeball/cypress-cucumber-preprocessor";
@@ -37,6 +39,21 @@ export default defineConfig({
           plugins: [createEsbuildPlugin(config)],
         })
       );
+
+      // Browser-side test code has no filesystem access, so embedding a screenshot
+      // into the Mochawesome report (for portability - see reportEvidenceHelper.js)
+      // requires a Node-side task to read and base64-encode the file. Returns null
+      // rather than throwing if the file isn't there, so a report-evidence problem
+      // never fails the actual business test.
+      on("task", {
+        encodeScreenshotAsBase64(fileName) {
+          const filePath = path.join(config.screenshotsFolder, fileName);
+          if (!existsSync(filePath)) {
+            return null;
+          }
+          return `data:image/png;base64,${readFileSync(filePath).toString("base64")}`;
+        },
+      });
 
       // DEV is the deliberate default when targetEnv is omitted - forgetting the
       // flag must never redirect the suite toward STG/PROD.

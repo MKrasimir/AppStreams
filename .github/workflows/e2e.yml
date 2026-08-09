@@ -20,3 +20,14 @@ jobs:
         env:
           CYPRESS_TEST_EMAIL: ${{ secrets.CYPRESS_TEST_EMAIL }}
           CYPRESS_TEST_PASSWORD: ${{ secrets.CYPRESS_TEST_PASSWORD }}
+      - name: Upload Cypress artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/reports/mochawesome
+            cypress/screenshots
+            cypress/videos
+          retention-days: 7
+          if-no-files-found: ignore

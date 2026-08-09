@@ -7,17 +7,21 @@
   "scripts": {
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:headed": "cypress run --browser chrome --headed",
-    "cy:headless": "cypress run --browser chrome",
-    "test": "cypress run --browser chrome",
-    "test:partners": "cypress run --browser chrome --spec \"cypress/e2e/features/partners/**/*.feature\"",
+    "cy:headless": "node scripts/run-headless-with-report.js --browser chrome",
+    "test": "node scripts/run-headless-with-report.js --browser chrome",
+    "test:partners": "node scripts/run-headless-with-report.js --browser chrome --spec \"cypress/e2e/features/partners/**/*.feature\"",
     "gherkin:lint": "gherkin-lint \"cypress/e2e/features/**/*.feature\""
   },
   "devDependencies": {
     "@badeball/cypress-cucumber-preprocessor": "26.0.0",
     "@bahmutov/cypress-esbuild-preprocessor": "2.2.8",
     "cypress": "15.19.0",
+    "cypress-multi-reporters": "^2.0.5",
     "esbuild": "^0.25.0",
-    "gherkin-lint": "^4.2.4"
+    "gherkin-lint": "^4.2.4",
+    "mochawesome": "^8.0.1",
+    "mochawesome-merge": "^5.1.1",
+    "mochawesome-report-generator": "^6.3.2"
   },
   "cypress-cucumber-preprocessor": {
     "stepDefinitions": [
