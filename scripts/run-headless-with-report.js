@@ -2,13 +2,10 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-// Everything Mochawesome produces - including screenshots, since screenshotsFolder
-// (cypress.config.js) points inside this same tree - lives under one directory, so
-// wiping it before each run is enough to guarantee "old report/evidence gone, new one
-// generated" without separate per-artifact-type bookkeeping. Built with
-// path.posix.join (always forward slashes) because the glob matching used by
-// mochawesome-merge treats backslash as an escape character, not a path separator -
-// a Windows path.join() result silently matches nothing.
+// Screenshots live under this same tree too (screenshotsFolder, cypress.config.js), so
+// wiping this one directory before each run is enough to clear everything. Built with
+// path.posix.join (always forward slashes): mochawesome-merge's glob treats backslash as
+// an escape character, so a Windows path.join() result would silently match nothing.
 const reportDir = path.posix.join("cypress", "reports", "mochawesome");
 const jsonDir = path.posix.join(reportDir, "json");
 const mergedJsonPath = path.posix.join(reportDir, "report.json");
@@ -29,10 +26,8 @@ function normalizeSpecPath(specPath) {
   return (specPath ?? "").replace(/\\/g, "/");
 }
 
-// Recursively collects every test object nested under a Mochawesome raw-JSON `result`
-// (or `suite`) node: its own `tests[]`, plus every nested `suites[].tests[]`, at any
-// depth. Mochawesome's schema allows arbitrarily deep suite nesting, so this walks
-// generically rather than assuming a fixed depth.
+// Mochawesome's schema allows arbitrarily deep suite nesting, so this walks recursively
+// rather than assuming a fixed depth.
 function collectTests(node, out = []) {
   if (Array.isArray(node.tests)) {
     out.push(...node.tests);
@@ -45,19 +40,15 @@ function collectTests(node, out = []) {
   return out;
 }
 
-// Reads the evidence.jsonl sidecar (one JSON record per captureScenarioEvidence() call)
-// and patches the matching test's `context` field, in place, into each raw per-spec JSON
-// file mochawesome already wrote under jsonDir - BEFORE mochawesome-merge combines them,
-// so context survives the merge/HTML-generation steps unchanged (those commands are not
-// modified at all).
+// Patches the matching test's `context` field into each raw per-spec JSON file, in
+// place, before mochawesome-merge combines them.
 //
 // Never fatal: a reporting-evidence mismatch (malformed line, unmatched record) must
-// never fail an otherwise-valid E2E run, but it also must never disappear silently - every
-// case is reported via console.log/warn, matched counts included.
+// never fail an otherwise-valid E2E run, but must never disappear silently either - every
+// case is reported via console.log/warn.
 function patchEvidenceIntoRawJson(jsonDirectory, jsonFileNames, sidecarFilePath) {
   if (!existsSync(sidecarFilePath)) {
-    // reportEvidence was off, or nothing captured any evidence this run - nothing to
-    // patch; every test's `context` stays `null`, same as Mochawesome's own default.
+    // Nothing to patch - every test's `context` stays `null`, Mochawesome's own default.
     return;
   }
 
@@ -142,15 +133,10 @@ function run(command, args, envOverrides = {}) {
 // happening to match the project root.
 const reporterConfigPath = path.resolve("reporter-config.json");
 
-// CYPRESS_reportEvidence gates cypress/helpers/reportEvidenceHelper.js's capture -
-// set only for this spawned process (via env, not a forwarded --env CLI flag, so it
-// can never be silently overwritten by a user-forwarded --env targetEnv=... arg).
-// cy:open/cy:headed invoke Cypress directly, never through this script, so they never
-// set it and never take evidence screenshots.
-//
-// --runner-ui: `cypress run` does not render the Command Log/Reporter UI by default,
-// so a `capture: "runner"` screenshot would have nothing to include without this -
-// scoped to this one invocation only (not cy:headed), still fully headless Chrome.
+// CYPRESS_reportEvidence gates reportEvidenceHelper.js's capture - set via env rather
+// than a forwarded --env flag, so a user-forwarded --env targetEnv=... can't overwrite it.
+// --runner-ui: `cypress run` doesn't render the Command Log by default, and the evidence
+// screenshot's capture: "runner" needs it rendered to have anything to capture.
 const cypressResult = run(
   "npx",
   [

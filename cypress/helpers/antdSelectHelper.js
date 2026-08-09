@@ -23,12 +23,10 @@ function optionMatchesTargets($el, targets) {
   return targets.includes(text) || (normalizedLabel !== null && targets.includes(normalizedLabel));
 }
 
-// jQuery's :visible only checks display/dimensions/detachment - it does NOT detect an
-// element being covered by another element on top of it (a virtualized/recycled row
-// positioned or overlaid oddly), which is a distinct, real failure mode Cypress's own
-// actionability check catches via a center-point hit-test. Replicate that specific
-// check here so a textual match that isn't actually clickable is never treated as
-// usable, without weakening the real (later) Cypress "be.visible" assertion at all.
+// jQuery's :visible doesn't detect an element being covered by another one on top of it
+// (a virtualized/recycled row positioned or overlaid oddly) - replicate Cypress's own
+// center-point hit-test here so a textual match that isn't actually clickable is never
+// treated as usable.
 function isActionable($el) {
   if (!$el.is(":visible")) {
     return false;
@@ -57,13 +55,9 @@ function filterVisibleMatches($options, targets) {
   });
 }
 
-// AntD's search input is frequently already empty (auto-cleared by the widget itself
-// after a multi-select pick, or simply never typed into for an immediate match).
-// Calling .clear() on an ALREADY-EMPTY multi-select search input sends
-// keyboard-clearing keystrokes this widget interprets as "backspace on an empty
-// field", which removes the most recently selected tag. This is the single, shared
-// safe-clear used everywhere the helper might touch the search input - never a
-// bare .clear() anywhere else in this file.
+// Calling .clear() on an already-empty multi-select search input sends keystrokes this
+// widget interprets as "backspace on an empty field", removing the most recently
+// selected tag - so this shared safe-clear is used everywhere instead of a bare .clear().
 function clearSearchIfNeeded(triggerSelector) {
   cy.get(triggerSelector)
     .invoke("val")
@@ -105,13 +99,9 @@ function throwNoUniqueMatch(expectedVariants, matchCount, $options) {
 }
 
 // Generic AntD Select interaction, reusable for any combobox field (Type, Services,
-// Subscription plan, ...): open it, scope strictly to its own option panel via the
-// trigger's ARIA relationship, and click the single option matching an expected value.
-// Handles both plain selects (option already rendered) and virtualized, searchable
-// selects where the full option set only exists in the DOM after typing a search term,
-// and both single-select (dropdown auto-closes on pick) and multi-select (picked option
-// becomes a tag, dropdown stays open and must be explicitly closed) controls - never a
-// constructed label selector, never fixed scrolling, never a blind index.
+// Subscription plan, ...). Handles both plain selects (option already rendered) and
+// virtualized, searchable selects (options only exist after typing a search term), and
+// both single-select (auto-closes on pick) and multi-select (stays open, tags picks).
 export function selectAntdOption(triggerSelector, expectedVariants, { multiple = false } = {}) {
   const targets = expectedVariants.map(normalize);
 
@@ -129,13 +119,9 @@ export function selectAntdOption(triggerSelector, expectedVariants, { multiple =
     .then((listboxId) => {
       const panelOptions = () => cy.get(`[id="${listboxId}"]`).parent().find(".ant-select-item-option");
 
-      // finishSelection takes the matched option's TEXT/LABEL (plain strings extracted
-      // once we know which option is the match) rather than a captured jQuery/DOM
-      // reference. It then re-queries the live panel fresh, right here, as part of a
-      // single Cypress-retried chain - never clicking a reference captured earlier
-      // (e.g. before typing a search term or across a virtualized re-render). Declared
-      // in this scope (not selectAntdOption's top level) because it needs panelOptions,
-      // which only exists here once aria-controls has resolved to a listboxId.
+      // Takes the matched option's text/label as plain strings, then re-queries the live
+      // panel fresh via panelOptions() rather than clicking a DOM reference captured
+      // earlier (e.g. before typing a search term or across a virtualized re-render).
       const finishSelection = (matchedText, matchedLabel, matchPath) => {
         const targetText = normalize(matchedText);
         const diagnosticContext =
@@ -199,8 +185,6 @@ export function selectAntdOption(triggerSelector, expectedVariants, { multiple =
             expect(snapshotOf($options), "option list re-rendered after search").not.to.equal(previousSnapshot);
           })
           .then(($options) => {
-            // Re-queried fresh from the live DOM above, after the search re-render -
-            // never a reference captured before typing. Only actionable matches count.
             const $visibleMatches = filterVisibleMatches($options, targets);
 
             if ($visibleMatches.length === 1) {
@@ -224,7 +208,7 @@ export function selectAntdOption(triggerSelector, expectedVariants, { multiple =
         // count as usable here, or it would incorrectly skip the search fallback.
         const $visibleImmediate = filterVisibleMatches($rendered, targets);
 
-        // 4. Already rendered, matching, and actually actionable - click it directly.
+        // 4. Already rendered and actionable - click it directly.
         if ($visibleImmediate.length === 1) {
           finishSelection(describeOption($visibleImmediate), $visibleImmediate.attr("label") || null, "immediate");
           return;

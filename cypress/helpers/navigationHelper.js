@@ -1,9 +1,7 @@
-// Application navigation metadata (routes, menu selectors, page markers) - not
-// business/test data, so this stays out of fixtures. Relative paths only: baseUrl
-// is resolved dynamically per targetEnv (dev/stg/prod), so this map must never
-// reference a hostname. Login is intentionally absent - cy.session() only re-runs
-// its setup (and therefore only renders the Login UI) on a cache miss, so it can't
-// be safely verified as part of the shared scenario flow.
+// Navigation metadata, not business/test data, so this stays out of fixtures. Relative
+// paths only - baseUrl is resolved dynamically per targetEnv, so this map must never
+// reference a hostname. Login is intentionally absent: cy.session() only re-runs its
+// setup (and renders the Login UI) on a cache miss, so it can't be reliably verified here.
 const pages = {
   Requests: {
     path: "/requests",

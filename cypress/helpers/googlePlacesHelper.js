@@ -6,10 +6,9 @@ function normalize(value) {
     .toLowerCase();
 }
 
-// Google's .pac-item often has no literal whitespace between the primary
-// (.pac-item-query) and secondary (trailing sibling) text in the DOM, even though
-// they render with visual spacing via CSS - collect each piece separately and join
-// with an explicit space rather than trusting raw .text() concatenation.
+// Google's .pac-item often has no literal whitespace between its primary/secondary text
+// nodes despite rendering with visual spacing via CSS - join pieces with an explicit
+// space rather than trusting raw .text() concatenation.
 function describeSuggestion($item) {
   const parts = [];
   $item.contents().each((_, node) => {

@@ -59,12 +59,9 @@ export default class PartnerForm extends BaseForm {
   }
 
   confirmPhotoUpload() {
-    // selectFile() only attaches the raw file - the app then opens a separate "Edit
-    // photo" crop/confirm modal, and the image isn't applied until its own Save is
-    // clicked. That Save button carries no id (unlike the Partner form's own
-    // #save-button), so it's only reachable by scoping into this specific, visible
-    // modal via its heading text - never a bare button/id lookup that could otherwise
-    // collide with the Partner form's main Save button.
+    // Attaching the file opens a separate "Edit photo" crop/confirm modal - the image
+    // isn't applied until its own Save is clicked. That Save button has no id, so it's
+    // scoped via the modal's heading text to avoid colliding with the form's #save-button.
     const modal = () => cy.contains(".ant-modal-content", "Edit photo");
 
     modal().should("be.visible");

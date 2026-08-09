@@ -59,10 +59,8 @@ export default defineConfig({
     },
   },
 
-  // Screenshots (both Cypress's own retry/failure captures and the custom Scenario
-  // evidence ones - see reportEvidenceHelper.js) save directly inside the report tree,
-  // so report.html can reference them by a portable relative path (no base64/task
-  // needed) and the wrapper's single report-directory cleanup covers them too.
+  // Screenshots save directly inside the report tree so report.html can reference them
+  // by a portable relative path, and the wrapper's report-directory cleanup covers them.
   screenshotsFolder: "cypress/reports/mochawesome/assets",
   screenshotOnRunFailure: true,
   video: true,

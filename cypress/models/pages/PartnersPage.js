@@ -1,15 +1,12 @@
 import ElementModel from "../ElementModel.js";
 import PartnerForm from "../forms/PartnerForm.js";
 
-// Shared by verifyPartnerDetails and verifyPartnerChanges - kept at module scope
-// (matching antdSelectHelper.js's convention) so both reuse the same rules instead
-// of each declaring their own copy.
+// Shared by verifyPartnerDetails and verifyPartnerChanges so both use the same rules.
 const normalizeText = (value) => (value || "").trim().replace(/\s+/g, " ").toLowerCase();
 const normalizePhone = (value) => (value || "").replace(/\s+/g, "");
 
-// Shared by waitForCreatePartnerRequest and waitForUpdatePartnerRequest - both request
-// bodies are asserted identically (response exists, succeeded, contains the expected
-// name/phone), differing only in the action/wording reported on failure.
+// Shared by the create/update wait helpers - both assert identically, differing only
+// in the action/wording reported on failure.
 function assertPartnerRequestBody(interception, partner, action, valueDescriptor) {
   expect(interception.response, `${action} Partner request returned a response`).to.exist;
   expect(interception.response.statusCode, `${action} Partner request returned success`).to.equal(200);
@@ -22,9 +19,8 @@ function assertPartnerRequestBody(interception, partner, action, valueDescriptor
   ).to.equal(normalizePhone(partner.phone));
 }
 
-// Row-scoped/dynamic table selectors - centralized here rather than ElementModel,
-// since they only mean anything scoped to an already-located, per-Partner row. This
-// is the single owner for these literals instead of each method retyping its own copy.
+// Row-scoped table selectors, centralized here (not ElementModel) since they only mean
+// anything scoped to an already-located Partner row.
 const selectors = {
   row: "tr.ant-table-row",
   columns: {
@@ -128,10 +124,9 @@ export default class PartnersPage {
         expect(normalizeText($cell.text())).to.include(normalizeText(partner.contactPerson));
       });
 
-      // Per-tag exact match, not a substring search over the whole cell's
-      // concatenated text - the real markup has no separator between adjacent
-      // service tags. Uses the bare `span` element, never the generated
-      // .CxZJ6/.SB1Op classes seen in the real DOM.
+      // Per-tag exact match, not a substring search over the cell's concatenated text -
+      // the real markup has no separator between adjacent tags. Uses the bare `span`
+      // element, never the generated .CxZJ6/.SB1Op classes seen in the real DOM.
       cy.get(selectors.columns.services)
         .find("span")
         .should(($tags) => {
@@ -151,10 +146,9 @@ export default class PartnersPage {
     });
   }
 
-  // Focused UPDATE-only comparison: proves the real persisted cells changed away
-  // from the pre-update values and landed on the post-update expected values - not
-  // just that the two JS objects differ. verifyPartnerDetails covers the complete
-  // post-update record separately; this never replaces it.
+  // Proves the persisted cells actually changed away from the pre-update values, not
+  // just that the two JS objects differ - verifyPartnerDetails covers the full
+  // post-update record separately.
   verifyPartnerChanges(originalPartner, updatedPartner) {
     this.getPartnerRow(updatedPartner.name).within(() => {
       cy.get(selectors.columns.name).should(($cell) => {
