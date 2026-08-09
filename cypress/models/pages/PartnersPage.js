@@ -49,9 +49,12 @@ export default class PartnersPage {
     this.addButton.click();
   }
 
-  createPartner(partner) {
+  prepareNewPartner(partner) {
     this.openCreateForm();
     this.form.fill(partner);
+  }
+
+  submitForm() {
     this.form.submit();
   }
 
@@ -94,11 +97,10 @@ export default class PartnersPage {
     this.form.fields.name.get().should("be.visible");
   }
 
-  // Replaces the entire value of both fields (ElementModel.type() clears first) and
-  // saves through the same generic PartnerForm submit() Create already uses.
-  updatePartnerNameAndPhone(name, phone) {
+  // Replaces the entire value of both fields (ElementModel.type() clears first). Does
+  // not submit - callers trigger Save separately via submitForm().
+  updatePartnerFields(name, phone) {
     this.form.updateFields({ name, phone });
-    this.form.submit();
   }
 
   registerUpdatePartnerRequest() {

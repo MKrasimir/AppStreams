@@ -8,11 +8,14 @@ Feature: Partner management
         Then I should be on the "Partners" page
 
     Scenario: Create a Service Partner
-        When I create a new Service Partner using valid required data
-        Then the Partner should be created successfully
+        When I fill the "Partner" form with valid required data
+        And I submit the "Partner" form
+        Then the "Partner" should be created successfully
 
     Scenario: Update a Service Partner
-        When I create a new Service Partner using valid required data
-        Then the Partner should be created successfully
-        When I update the created Partner
-        Then the Partner changes should be persisted
+        When I fill the "Partner" form with valid required data
+        And I submit the "Partner" form
+        Then the "Partner" should be created successfully
+        When I update the "Partner" form with new details
+        And I submit the "Partner" form
+        Then the "Partner" changes should be persisted
